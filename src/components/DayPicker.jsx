@@ -185,6 +185,7 @@ export default class DayPicker extends React.Component {
       showKeyboardShortcuts: props.showKeyboardShortcuts,
       onKeyboardShortcutsPanelClose() {},
       isTouchDevice: isTouchDevice(),
+      withMouseInteractions: true,
     };
 
     this.onKeyDown = this.onKeyDown.bind(this);
@@ -244,6 +245,7 @@ export default class DayPicker extends React.Component {
           showKeyboardShortcuts,
           onKeyboardShortcutsPanelClose,
           focusedDate,
+          withMouseInteractions: false,
         });
       } else {
         this.setState({ focusedDate: null });
@@ -274,6 +276,8 @@ export default class DayPicker extends React.Component {
   onKeyDown(e) {
     if (e) e.stopPropagation();
 
+    this.setState({ withMouseInteractions: false });
+
     const { onBlur } = this.props;
     const { focusedDate, showKeyboardShortcuts } = this.state;
     if (!focusedDate) return;
@@ -301,10 +305,12 @@ export default class DayPicker extends React.Component {
         didTransitionMonth = this.maybeTransitionPrevMonth(newFocusedDate);
         break;
       case 'Home':
+        if (e) e.preventDefault();
         newFocusedDate.startOf('week');
         didTransitionMonth = this.maybeTransitionPrevMonth(newFocusedDate);
         break;
       case 'PageUp':
+        if (e) e.preventDefault();
         newFocusedDate.subtract(1, 'month');
         didTransitionMonth = this.maybeTransitionPrevMonth(newFocusedDate);
         break;
@@ -320,10 +326,12 @@ export default class DayPicker extends React.Component {
         didTransitionMonth = this.maybeTransitionNextMonth(newFocusedDate);
         break;
       case 'End':
+        if (e) e.preventDefault();
         newFocusedDate.endOf('week');
         didTransitionMonth = this.maybeTransitionNextMonth(newFocusedDate);
         break;
       case 'PageDown':
+        if (e) e.preventDefault();
         newFocusedDate.add(1, 'month');
         didTransitionMonth = this.maybeTransitionNextMonth(newFocusedDate);
         break;
@@ -509,6 +517,17 @@ export default class DayPicker extends React.Component {
       translationValue: 0,
       nextFocusedDate: null,
       focusedDate: newFocusedDate,
+    }, () => {
+      // we don't want to focus on the relevant calendar day after a month transition
+      // if the user is navigating around using a mouse
+      if (
+        this.state.withMouseInteractions &&
+        typeof document !== 'undefined' &&
+        document.activeElement &&
+        document.activeElement !== document.body
+      ) {
+        document.activeElement.blur();
+      }
     });
   }
 
@@ -738,6 +757,7 @@ export default class DayPicker extends React.Component {
             ref={(ref) => { this.container = ref; }}
             onClick={(e) => { e.stopPropagation(); }}
             onKeyDown={throttle(this.onKeyDown, 300)}
+            onMouseUp={() => { this.setState({ withMouseInteractions: true }); }}
             role="region"
             tabIndex={-1}
           >

@@ -1,6 +1,8 @@
 import React from 'react';
 
 export default function getPhrase(phrase, args) {
+  if (!phrase) return '';
+
   if (typeof phrase === 'string') return phrase;
 
   if (typeof phrase === 'function') return phrase(args);
